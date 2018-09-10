@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
   angular.module('ng-webcam', []).directive('ngWebcam', ngWebcam);
   ngWebcam.$inject = [];
@@ -40,16 +40,16 @@
     };
 
     function template(element, attrs) {
-      return ['<div class="ng-webcam no-overlay" ng-class="{\'no-overlay\' : vm.counter === 0 || vm.config.countdown === 0}">',
-        '<span ng-show="vm.webcamLive === true && vm.config.countdown > 0 && vm.counter > 0" id="ng-webcam-counter">{{vm.counter}}</span>',
-        '<img ng-show="vm.webcamLive === true" id="ng-webcam-overlay" src="{{vm.config.overlay}}" />',
+      return ['<div class="ng-webcam" ng-class="{\'no-overlay\' : vm.counter === 0 || vm.config.countdown === 0}">',
+        '<span ng-show="vm.webcamLive === true && vm.config.countdown > 0 && vm.counter > 0" id="counter">{{vm.counter}}</span>',
+        '<img ng-show="vm.webcamLive === true" id="ng-webcam-overlay" ng-src="{{vm.config.overlay}}" />',
         '<div id="ng-webcam-container"></div>',
         '</div>'].join('');
     }
 
     function link(scope, element, attrs, ctrl) {
       ctrl.init();
-      scope.$on('$destroy', function() {
+      scope.$on('$destroy', function () {
         ctrl.destroy();
       });
     }
@@ -63,7 +63,7 @@
       var images = [];
       vm.webcamLoaded = false;
       vm.webcamLive = false;
-      vm.counter = 3;
+      vm.counter = 0;
       vm.init = init;
       vm.destroy = destroy;
       /**
@@ -102,39 +102,39 @@
 
       function init() {
         vm.config = vm.config || {};
-        if(window.localStorage) window.localStorage.setItem('visited', '1');
-        if(angular.isUndefined(vm.config.viewerWidth)) vm.config.viewerWidth = 'auto';
-        if(angular.isUndefined(vm.config.viewerHeight)) vm.config.viewerHeight = 'auto';
-        if(angular.isUndefined(vm.config.outputWidth)) vm.config.outputWidth = 320;
-        if(angular.isUndefined(vm.config.outputHeight)) vm.config.outputHeight = 240;
-        if(angular.isUndefined(vm.config.delay)) vm.config.delay = 0;
-        if(angular.isUndefined(vm.config.shots)) vm.config.shots = 1;
-        if(angular.isUndefined(vm.config.countdown)) vm.config.countdown = 0;
+        if (window.localStorage) window.localStorage.setItem('visited', '1');
+        if (angular.isUndefined(vm.config.viewerWidth)) vm.config.viewerWidth = 320;
+        if (angular.isUndefined(vm.config.viewerHeight)) vm.config.viewerHeight = 240;
+        if (angular.isUndefined(vm.config.outputWidth)) vm.config.outputWidth = 320;
+        if (angular.isUndefined(vm.config.outputHeight)) vm.config.outputHeight = 240;
+        if (angular.isUndefined(vm.config.delay)) vm.config.delay = 0;
+        if (angular.isUndefined(vm.config.shots)) vm.config.shots = 1;
+        if (angular.isUndefined(vm.config.countdown)) { vm.config.countdown = 0; } else { vm.counter = vm.config.countdown; };
         configureListeners();
         configure();
       }
 
       function destroy() {
-        if(vm.webcamLive) Webcam.reset();
+        if (vm.webcamLive) Webcam.reset();
         vm.webcamLive = false;
         vm.webcamLoaded = false;
-        if(angular.isDefined(snapshotTimer)) {
+        if (angular.isDefined(snapshotTimer)) {
           $interval.cancel(snapshotTimer);
           snapshotTimer = undefined;
         }
-        if(angular.isDefined(countdownTimer)) {
+        if (angular.isDefined(countdownTimer)) {
           $interval.cancel(countdownTimer);
           countdownTimer = undefined;
         }
-        vm.counter = 3;
+        vm.counter = 0;
 
       }
 
       function configure() {
-        if(angular.isDefined(vm.config.shutterUrl)) {
+        if (angular.isDefined(vm.config.shutterUrl)) {
           sound = new Audio();
           sound.autoplay = false;
-          if(navigator.userAgent.match(/Firefox/)) {
+          if (navigator.userAgent.match(/Firefox/)) {
             sound.src = vm.config.shutterUrl.split('.')[0] + '.ogg';
           } else {
             sound.src = vm.config.shutterUrl;
@@ -150,81 +150,83 @@
           jpeg_quality: 100,
           flip_horiz: true
         });
-        if(angular.isDefined(vm.config.flashNotDetectedText)) {
+        if (angular.isDefined(vm.config.flashNotDetectedText)) {
           Webcam.set('flashNotDetectedText', vm.config.flashNotDetectedText);
         }
-        if(angular.isDefined(vm.config.flashFallbackUrl)) {
+        if (angular.isDefined(vm.config.flashFallbackUrl)) {
           Webcam.setSWFLocation(vm.config.flashFallbackUrl);
         }
         Webcam.attach('#ng-webcam-container');
       }
 
       function configureListeners() {
-        Webcam.on('load', function() {
-          $scope.$apply(function() {
+        Webcam.on('load', function () {
+          $scope.$apply(function () {
             vm.webcamLoaded = true;
-            if(angular.isDefined(vm.onLoad)) {
+            if (angular.isDefined(vm.onLoad)) {
               vm.onLoad();
             }
           });
         });
-        Webcam.on('live', function() {
-          $scope.$apply(function() {
+        Webcam.on('live', function () {
+          $scope.$apply(function () {
             vm.webcamLive = true;
-            if(angular.isDefined(vm.onLive)) {
+            if (angular.isDefined(vm.onLive)) {
               vm.onLive();
             }
           });
         });
-        Webcam.on('error', function(err) {
-          if(angular.isDefined(vm.onError)) {
-            vm.onError({err:err});
+        Webcam.on('error', function (err) {
+          if (angular.isDefined(vm.onError)) {
+            vm.onError({ err: err });
           }
         });
       }
 
       function capture(index) {
-        if(sound) {
+        if (sound) {
           sound.play();
         }
-        if(index === (vm.config.shots-1)) {
+        if (index === (vm.config.shots - 1)) {
           $interval.cancel(snapshotTimer);
         }
-        Webcam.snap(function(data_uri) {
+        Webcam.snap(function (data_uri) {
           images[index] = data_uri;
-          if(index < (vm.config.shots-1) && angular.isDefined(vm.onCaptureProgress)) {
-            var progress = Math.round(((index+1) * 100) / vm.config.shots);
-            vm.onCaptureProgress({src: data_uri,progress: progress});
+          if (index < (vm.config.shots - 1) && angular.isDefined(vm.onCaptureProgress)) {
+            var progress = Math.round(((index + 1) * 100) / vm.config.shots);
+            vm.onCaptureProgress({ src: data_uri, progress: progress });
           }
-          if(index === (vm.config.shots-1) && angular.isDefined(vm.onCaptureComplete)) {
-            return vm.onCaptureComplete({src: images});
+          if (index === (vm.config.shots - 1) && angular.isDefined(vm.onCaptureComplete)) {
+            return vm.onCaptureComplete({ src: images });
           }
         });
       }
 
       function onWebcamCapture() {
-        if(angular.isUndefined(vm.config.countdown)) {
+        if (!vm.config.countdown) {
           var count = 0;
-          snapshotTimer = $interval(function() {
+          snapshotTimer = $interval(function () {
             capture(count);
             count++;
           }, (vm.config.delay * 1000), vm.config.shots);
         } else {
-          if(countdownTimer !== undefined) return;
-          vm.counter = 3;
-          countdownTimer = $interval(function() {
+          if (countdownTimer !== undefined) return;
+          vm.counter = vm.config.countdown;
+          countdownTimer = $interval(function () {
             vm.counter = vm.counter - 1;
-            if(vm.counter === 0) {
-              if(countdownTimer) {
+            if (vm.counter === 0) {
+              if (countdownTimer) {
                 $interval.cancel(countdownTimer);
               }
-              var count = 0;
-              snapshotTimer = $interval(function() {
+              //snap first
+              capture(0);
+              var count = 1;
+              snapshotTimer = $interval(function () {
                 capture(count);
                 count++;
-              }, (vm.config.delay * 1000), vm.config.shots);
+              }, (vm.config.delay * 1000), vm.config.shots - 1);
             }
-          }, 1000, 3);
+          }, 1000, vm.config.countdown);
         }
       }
 
